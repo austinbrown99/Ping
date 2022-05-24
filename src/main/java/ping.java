@@ -13,9 +13,9 @@ public class ping {
 
     public static void main(String[] args) {
         //Create Window
-        JFrame frame = new JFrame("Ping Sweep V0.1");
+        JFrame frame = new JFrame("Ping Sweep V0.2");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(700, 200);
+        frame.setSize(475, 210);
         JPanel panel = new JPanel();
         panel.setLayout(null);
 
@@ -48,6 +48,10 @@ public class ping {
         subnetAddressIP.setBounds(175, 65, 115, 20);
         subnetAddressIP.setEnabled(false);
 
+        JTextField subnetMask = new JTextField();
+        subnetMask.setBounds(320, 65, 30, 20);
+        subnetMask.setEnabled(false);
+
         JRadioButton fileAddress = new JRadioButton("From File");
         fileAddress.setBounds(15, 90, 150, 20);
 
@@ -71,6 +75,7 @@ public class ping {
         panel.add(dashLabel);
         panel.add(subnetAddress);
         panel.add(subnetAddressIP);
+        panel.add(subnetMask);
         panel.add(fileAddress);
         panel.add(fileAddressIP);
         panel.add(folderLabel);
@@ -88,6 +93,7 @@ public class ping {
             rangeAddressIP2.setEnabled(false);
             subnetAddress.setSelected(false);
             subnetAddressIP.setEnabled(false);
+            subnetMask.setEnabled(false);
             fileAddress.setSelected(false);
             fileAddressIP.setEnabled(false);
         });
@@ -98,6 +104,7 @@ public class ping {
             rangeAddressIP2.setEnabled(!rangeAddressIP2.isEnabled());
             subnetAddress.setSelected(false);
             subnetAddressIP.setEnabled(false);
+            subnetMask.setEnabled(false);
             fileAddress.setSelected(false);
             fileAddressIP.setEnabled(false);
         });
@@ -108,6 +115,7 @@ public class ping {
             rangeAddressIP2.setEnabled(false);
             rangeAddress.setSelected(false);
             subnetAddressIP.setEnabled(!subnetAddressIP.isEnabled());
+            subnetMask.setEnabled(!subnetMask.isEnabled());
             fileAddress.setSelected(false);
             fileAddressIP.setEnabled(false);
         });
@@ -119,6 +127,7 @@ public class ping {
             rangeAddress.setSelected(false);
             subnetAddress.setSelected(false);
             subnetAddressIP.setEnabled(false);
+            subnetMask.setEnabled(false);
             fileAddressIP.setEnabled(!fileAddressIP.isEnabled());
         });
         fileAddressIP.addActionListener(e -> {
@@ -138,7 +147,7 @@ public class ping {
                 } else if (rangeAddress.isSelected()) {
                     ipRange(rangeAddressIP1.getText(), rangeAddressIP2.getText());
                 } else if (subnetAddress.isSelected()) {
-                    System.out.println("Test2");
+                    subnet(subnetAddressIP.getText(), subnetMask.getText());
                 } else if (fileAddress.isSelected()) {
                     System.out.println("Test3");
                 }
@@ -166,6 +175,16 @@ public class ping {
         Iterator<? extends IPAddress> iterator = ipRange.stream().iterator();
         while (iterator.hasNext()) {
             sendPingRequest(String.valueOf(iterator.next()));
+        }
+    }
+
+    public static void subnet(String address, String mask) throws IOException {
+        IPAddress ipa = new IPAddressString(address).getAddress().setPrefixLength(Integer.parseInt(mask));
+
+        Iterator<? extends IPAddress> iterator = ipa.stream().iterator();
+        while (iterator.hasNext()) {
+            String ipAddress = String.valueOf(iterator.next());
+            sendPingRequest(ipAddress.substring(0, ipAddress.indexOf("/")));
         }
     }
 }
