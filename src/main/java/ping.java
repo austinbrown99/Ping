@@ -3,7 +3,9 @@ import inet.ipaddr.IPAddressSeqRange;
 import inet.ipaddr.IPAddressString;
 
 import javax.swing.*;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Iterator;
@@ -39,7 +41,7 @@ public class ping {
         rangeAddressIP2.setEnabled(false);
 
         JLabel dashLabel = new JLabel("-");
-        dashLabel.setBounds(305, 40, 10, 10);
+        dashLabel.setBounds(305, 40, 10, 20);
 
         JRadioButton subnetAddress = new JRadioButton("Subnet Address");
         subnetAddress.setBounds(15, 65, 150, 20);
@@ -48,8 +50,12 @@ public class ping {
         subnetAddressIP.setBounds(175, 65, 115, 20);
         subnetAddressIP.setEnabled(false);
 
+        JLabel maskLabel = new JLabel("/");
+        maskLabel.setBounds(305, 65, 10, 20);
+
         JTextField subnetMask = new JTextField();
         subnetMask.setBounds(320, 65, 30, 20);
+        subnetMask.setDocument(new JTextFieldLimit(2));
         subnetMask.setEnabled(false);
 
         JRadioButton fileAddress = new JRadioButton("From File");
@@ -74,6 +80,7 @@ public class ping {
         panel.add(rangeAddressIP2);
         panel.add(dashLabel);
         panel.add(subnetAddress);
+        panel.add(maskLabel);
         panel.add(subnetAddressIP);
         panel.add(subnetMask);
         panel.add(fileAddress);
@@ -149,7 +156,13 @@ public class ping {
                 } else if (subnetAddress.isSelected()) {
                     subnet(subnetAddressIP.getText(), subnetMask.getText());
                 } else if (fileAddress.isSelected()) {
-                    System.out.println("Test3");
+                    if (selectedFolder == null) {
+                        JOptionPane.showMessageDialog(frame, "Please select a Folder", "Folder Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    };
+                    fileAddresses(selectedFolder);
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Please select an option", "Folder Error", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -185,6 +198,17 @@ public class ping {
         while (iterator.hasNext()) {
             String ipAddress = String.valueOf(iterator.next());
             sendPingRequest(ipAddress.substring(0, ipAddress.indexOf("/")));
+        }
+    }
+
+    public static void fileAddresses (File selectedFolder) throws IOException {
+        FileReader input = new FileReader(selectedFolder);
+        BufferedReader bufRead = new BufferedReader(input);
+        String myLine;
+
+        while ( (myLine = bufRead.readLine()) != null)
+        {
+            sendPingRequest(myLine);
         }
     }
 }
