@@ -8,14 +8,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public class ping {
     private static File selectedFolder;
+    private static final ArrayList<String> pingResults = new ArrayList<>();
 
     public static void main(String[] args) {
         //Create Window
-        JFrame frame = new JFrame("Ping Sweep V0.2");
+        JFrame frame = new JFrame("Ping Sweep V0.3");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(475, 210);
         JPanel panel = new JPanel();
@@ -148,6 +150,16 @@ public class ping {
             }
         });
         startButton.addActionListener(e -> {
+            //Create Window
+            JFrame resultFrame = new JFrame("Ping Result");
+            resultFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            resultFrame.setSize(735, 350);
+            JPanel resultPanel = new JPanel();
+            resultPanel.setLayout(null);
+            resultFrame.setContentPane(resultPanel);
+
+            pingResults.clear();
+
             try {
                 if (singleAddress.isSelected()) {
                     sendPingRequest(singleAddressIP.getText());
@@ -159,14 +171,36 @@ public class ping {
                     if (selectedFolder == null) {
                         JOptionPane.showMessageDialog(frame, "Please select a Folder", "Folder Error", JOptionPane.ERROR_MESSAGE);
                         return;
-                    };
+                    }
                     fileAddresses(selectedFolder);
                 } else {
                     JOptionPane.showMessageDialog(frame, "Please select an option", "Folder Error", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
+
+            //List of Pings
+            JList<String> displayList = new JList<>(pingResults.toArray(new String[0]));
+            JScrollPane scrollPane = new JScrollPane(displayList);
+            scrollPane.setBounds(10, 10, 700, 200);
+
+            //Close Button
+            JButton resultsClose = new JButton("Close");
+            resultsClose.setBounds(10, 220, 150, 75);
+            resultsClose.addActionListener(e1 -> {
+                resultFrame.getContentPane().remove(scrollPane);
+                resultFrame.getContentPane().remove(resultFrame);
+                resultFrame.dispose();
+            });
+
+            resultFrame.add(resultsClose);
+            resultFrame.add(scrollPane);
+
+            System.out.println("Test");
+            resultFrame.update(resultFrame.getGraphics());
+            resultFrame.setVisible(true);
         });
     }
 
@@ -175,8 +209,10 @@ public class ping {
         System.out.println("Sending Ping Request to " + ipAddress);
         if (address.isReachable(5000)) {
             System.out.println("Host is Reachable");
+            pingResults.add(ipAddress + " is Reachable");
         } else {
             System.out.println("Sorry! We can't Reach to this host");
+            pingResults.add(ipAddress + " We can't reach this host");
         }
     }
 
@@ -201,13 +237,12 @@ public class ping {
         }
     }
 
-    public static void fileAddresses (File selectedFolder) throws IOException {
+    public static void fileAddresses(File selectedFolder) throws IOException {
         FileReader input = new FileReader(selectedFolder);
         BufferedReader bufRead = new BufferedReader(input);
         String myLine;
 
-        while ( (myLine = bufRead.readLine()) != null)
-        {
+        while ((myLine = bufRead.readLine()) != null) {
             sendPingRequest(myLine);
         }
     }
