@@ -3,10 +3,10 @@ import inet.ipaddr.IPAddressSeqRange;
 import inet.ipaddr.IPAddressString;
 
 import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.io.*;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -14,10 +14,11 @@ import java.util.Iterator;
 public class ping {
     private static File selectedFolder;
     private static final ArrayList<String> pingResults = new ArrayList<>();
+    private static long failedPings = 0;
 
     public static void main(String[] args) {
         //Create Window
-        JFrame frame = new JFrame("Ping Sweep V0.3");
+        JFrame frame = new JFrame("Ping Sweep V1.0");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(475, 210);
         JPanel panel = new JPanel();
@@ -27,7 +28,7 @@ public class ping {
         JRadioButton singleAddress = new JRadioButton("Single Address");
         singleAddress.setBounds(15, 15, 150, 20);
 
-        JTextField singleAddressIP = new JTextField();
+        JTextField singleAddressIP = new JTextField("127.0.0.1");
         singleAddressIP.setBounds(175, 15, 115, 20);
         singleAddressIP.setEnabled(false);
 
@@ -150,15 +151,8 @@ public class ping {
             }
         });
         startButton.addActionListener(e -> {
-            //Create Window
-            JFrame resultFrame = new JFrame("Ping Result");
-            resultFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            resultFrame.setSize(735, 350);
-            JPanel resultPanel = new JPanel();
-            resultPanel.setLayout(null);
-            resultFrame.setContentPane(resultPanel);
-
             pingResults.clear();
+            failedPings = 0;
 
             try {
                 if (singleAddress.isSelected()) {
@@ -181,6 +175,81 @@ public class ping {
                 ex.printStackTrace();
             }
 
+            //Create Window
+            JFrame resultFrame = new JFrame("Ping Result");
+            resultFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            resultFrame.setSize(735, 350);
+            JPanel resultPanel = new JPanel();
+            resultPanel.setLayout(null);
+            resultFrame.setContentPane(resultPanel);
+
+            //Total Scanned Label
+            JLabel totalLabel = new JLabel();
+            totalLabel.setText(pingResults.size() + " IPs Pinged");
+            totalLabel.setBounds(200, 220, 150, 37);
+            totalLabel.setVerticalAlignment(SwingConstants.CENTER);
+            totalLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            //Total Problems
+            JLabel totalProblems = new JLabel();
+            totalProblems.setText(failedPings + " failed");
+            totalProblems.setBounds(200, 257, 150, 37);
+            totalProblems.setVerticalAlignment(SwingConstants.CENTER);
+            totalProblems.setHorizontalAlignment(SwingConstants.CENTER);
+
+            //Copy Button
+            StringBuilder problemCopyString = new StringBuilder();
+            for (String i : pingResults) {
+                problemCopyString.append("\n").append(i);
+            }
+            JButton copyButton = new JButton("Copy");
+            copyButton.setBounds(560, 220, 150, 75);
+            String finalProblemCopyString = problemCopyString.toString();
+            copyButton.addActionListener(e1 -> {
+                StringSelection stringSelection = new StringSelection(finalProblemCopyString);
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(stringSelection, null);
+            });
+
+            //Create File Button
+            JButton createFile = new JButton("Create \n File");
+            createFile.setBounds(400, 220, 150, 75);
+            createFile.addActionListener(e1 -> {
+                //Select location for file
+                File selectedResultsFolder = null;
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                fileChooser.setCurrentDirectory(new File(System.getProperty("user.home") + System.getProperty("file.separator") + "Desktop"));
+                int option = fileChooser.showOpenDialog(frame);
+                if (option == JFileChooser.APPROVE_OPTION) {
+                    selectedResultsFolder = fileChooser.getSelectedFile();
+                }
+
+                if (selectedResultsFolder == null) {
+                    JOptionPane.showMessageDialog(frame, "Please select a Folder", "Folder Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                File resultFile = new File(selectedResultsFolder + "\\result.txt");
+                try {
+                    boolean result = resultFile.createNewFile();
+                    FileWriter writer = new FileWriter(resultFile);
+                    if (result) { //Do something if the file doesn't exist when creating it
+                        for (String str : pingResults) {
+                            writer.write(str + System.lineSeparator());
+                        }
+                    } else { //Do something if the file already exists when creating it
+                        //I know this is the same as above, but I don't care to make it better. It works this way
+                        for (String str : pingResults) {
+                            writer.write(str + System.lineSeparator());
+                        }
+                    }
+                    writer.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+
             //List of Pings
             JList<String> displayList = new JList<>(pingResults.toArray(new String[0]));
             JScrollPane scrollPane = new JScrollPane(displayList);
@@ -197,9 +266,10 @@ public class ping {
 
             resultFrame.add(resultsClose);
             resultFrame.add(scrollPane);
-
-            System.out.println("Test");
-            resultFrame.update(resultFrame.getGraphics());
+            resultFrame.add(totalLabel);
+            resultFrame.add(totalProblems);
+            resultFrame.add(copyButton);
+            resultFrame.add(createFile);
             resultFrame.setVisible(true);
         });
     }
@@ -207,12 +277,16 @@ public class ping {
     public static void sendPingRequest(String ipAddress) throws IOException {
         InetAddress address = InetAddress.getByName(ipAddress);
         System.out.println("Sending Ping Request to " + ipAddress);
-        if (address.isReachable(5000)) {
+        if (address.isReachable(3000)) {
             System.out.println("Host is Reachable");
             pingResults.add(ipAddress + " is Reachable");
         } else {
-            System.out.println("Sorry! We can't Reach to this host");
-            pingResults.add(ipAddress + " We can't reach this host");
+            System.out.println("test");
+            if (!address.isReachable(3000)) {
+                System.out.println("Sorry! We can't Reach to this host");
+                pingResults.add(ipAddress + " We can't reach this host");
+                failedPings++;
+            }
         }
     }
 
