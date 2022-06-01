@@ -2,6 +2,9 @@
   <artifact type="jar" name="Ping:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/Ping_jar</output-path>
     <root id="archive" name="Ping.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/resources/META-INF/MANIFEST.MF" />
+      </element>
       <element id="module-output" name="Ping" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/github/seancfoley/ipaddress/5.3.3/ipaddress-5.3.3.jar" path-in-jar="/" />
     </root>
